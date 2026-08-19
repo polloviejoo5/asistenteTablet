@@ -408,10 +408,20 @@ async function activarConsulta(){
       mediaRecorder = new MediaRecorder(stream);
       audioChunks = [];
       mediaRecorder.ondataavailable = (e) => { if(e.data.size > 0) audioChunks.push(e.data); };
-      mediaRecorder.onstop = () => {
+      mediaRecorder.onstop = async () => {
         stream.getTracks().forEach(t => t.stop()); // apaga el micrófono
-        const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
-        enviarAudioAGemini(blob);
+        const blobOriginal = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+        try{
+          // Gemini no acepta audio/webm (lo que graba Chrome por defecto).
+          // Lo convertimos a WAV en el propio navegador antes de mandarlo.
+          const wavBlob = await convertirAWav(blobOriginal);
+          enviarAudioAGemini(wavBlob);
+        }catch(e){
+          console.error('Error convirtiendo el audio:', e);
+          mostrarRespuesta('', 'No se pudo procesar el audio grabado.', '⚠️');
+          micBtn.classList.remove('thinking');
+          micHint.textContent = 'Tocá para preguntar';
+        }
       };
       mediaRecorder.start();
       grabando = true;
@@ -439,6 +449,67 @@ function blobABase64(blob){
     reader.onerror = reject;
     reader.readAsDataURL(blob);
   });
+}
+
+/* --- Conversión de audio grabado (webm) a WAV, que sí acepta Gemini --- */
+async function convertirAWav(blob){
+  const arrayBuffer = await blob.arrayBuffer();
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  const audioCtx = new AudioCtx();
+  const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+  const wavBlob = audioBufferAWav(audioBuffer);
+  audioCtx.close();
+  return wavBlob;
+}
+
+function audioBufferAWav(buffer){
+  const numChannels = buffer.numberOfChannels;
+  const sampleRate = buffer.sampleRate;
+  const bitDepth = 16;
+
+  const canal0 = buffer.getChannelData(0);
+  const interleaved = numChannels === 2 ? intercalarCanales(canal0, buffer.getChannelData(1)) : canal0;
+
+  const dataLength = interleaved.length * (bitDepth / 8);
+  const arrBuf = new ArrayBuffer(44 + dataLength);
+  const view = new DataView(arrBuf);
+
+  escribirTexto(view, 0, 'RIFF');
+  view.setUint32(4, 36 + dataLength, true);
+  escribirTexto(view, 8, 'WAVE');
+  escribirTexto(view, 12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true); // PCM
+  view.setUint16(22, numChannels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * numChannels * (bitDepth / 8), true);
+  view.setUint16(32, numChannels * (bitDepth / 8), true);
+  view.setUint16(34, bitDepth, true);
+  escribirTexto(view, 36, 'data');
+  view.setUint32(40, dataLength, true);
+
+  let offset = 44;
+  for (let i = 0; i < interleaved.length; i++, offset += 2){
+    const s = Math.max(-1, Math.min(1, interleaved[i]));
+    view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+  }
+
+  return new Blob([view], { type: 'audio/wav' });
+}
+
+function intercalarCanales(izq, der){
+  const resultado = new Float32Array(izq.length + der.length);
+  let i = 0, j = 0;
+  while (i < resultado.length){
+    resultado[i++] = izq[j];
+    resultado[i++] = der[j];
+    j++;
+  }
+  return resultado;
+}
+
+function escribirTexto(view, offset, texto){
+  for (let i = 0; i < texto.length; i++) view.setUint8(offset + i, texto.charCodeAt(i));
 }
 
 async function enviarAudioAGemini(blob){
