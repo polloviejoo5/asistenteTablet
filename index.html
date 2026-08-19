@@ -559,9 +559,31 @@ function mostrarRespuesta(pregunta, texto, icono){
 function hablar(texto){
   if(!('speechSynthesis' in window)) return;
   window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(texto);
-  u.lang = CONFIG.VOZ_LANG;
-  window.speechSynthesis.speak(u);
+
+  const decirConVoces = () => {
+    const voces = window.speechSynthesis.getVoices();
+    // Buscamos cualquier voz en español instalada (RHVoice puede haberla
+    // registrado como "es-ES", "es-419", "es", etc. — no forzamos "es-AR" exacto).
+    const vozEs = voces.find(v => v.lang && v.lang.toLowerCase().startsWith('es'));
+
+    const u = new SpeechSynthesisUtterance(texto);
+    if(vozEs){
+      u.voice = vozEs;
+      u.lang = vozEs.lang;
+    } else {
+      u.lang = CONFIG.VOZ_LANG; // último recurso, puede no sonar si no hay voz instalada
+    }
+    window.speechSynthesis.speak(u);
+  };
+
+  // En algunos navegadores la lista de voces carga de forma asíncrona
+  // y getVoices() devuelve vacío la primera vez.
+  const vocesActuales = window.speechSynthesis.getVoices();
+  if(vocesActuales.length === 0){
+    window.speechSynthesis.onvoiceschanged = decirConVoces;
+  } else {
+    decirConVoces();
+  }
 }
 </script>
 </body>
