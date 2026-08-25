@@ -1,71 +1,107 @@
-# Panel de pared — clima, calendario y consulta a Gemini (con Vercel)
+# Panel de pared — clima, calendario, inventario y lista de compras (con Vercel)
 
-Arquitectura: la tablet solo habla con tu propio proyecto de Vercel. Las claves de
-Gemini y Google Calendar viven como "Environment Variables" en Vercel — nunca están
-en el código que descarga el navegador, ni en el repositorio de git.
+Arquitectura: la tablet solo habla con tu propio proyecto de Vercel. Las claves
+viven como "Environment Variables" en Vercel — nunca están en el código que
+descarga el navegador, ni en el repositorio de git. Todo el sitio está protegido
+con usuario y contraseña vía `middleware.js`.
 
 ```
 tu-repo/
-├── index.html          ← la página que ve la tablet (sin ninguna clave adentro)
+├── index.html            ← la página que ve la tablet (sin ninguna clave adentro)
+├── middleware.js           ← protege todo el sitio con usuario/contraseña
+├── lib/
+│   └── sheets.js            ← helper compartido para leer/escribir en Google Sheets
 └── api/
-    ├── gemini.js        ← función serverless: recibe el audio, habla con Gemini
-    └── calendar.js       ← función serverless: trae los eventos del calendario
+    ├── calendar.js           ← trae los eventos del calendario (solo lectura)
+    ├── inventario.js          ← ver/agregar/actualizar/quitar del inventario
+    └── lista-compras.js        ← ver/agregar/actualizar/quitar de la lista de compras
 ```
 
-## 1. Subir el proyecto a GitHub
+## 1. Preparar la planilla de Google Sheets
 
-Ahora sí podés subir todo el repo tal cual está, sin preocuparte por el secret
-scanning — ningún archivo del repo contiene una clave real, así que no va a saltar
-ninguna alerta. Subí `index.html` y la carpeta `api/` completa.
+Podés usar tu Excel actual (pasado a Google Sheets) o crear uno nuevo. Necesita
+**dos hojas** (pestañas abajo del todo), con estos nombres y encabezados exactos:
 
-## 2. Crear el proyecto en Vercel
+**Hoja "Inventario"** (fila 1 = encabezados, los datos arrancan en la fila 2):
 
-1. Andá a https://vercel.com y creá una cuenta (podés entrar directo con tu cuenta
-   de GitHub, es gratis).
-2. Tocá **"Add New" → "Project"**.
-3. Elegí el repositorio que acabás de subir. Vercel detecta automáticamente que hay
-   una carpeta `api/` y arma las funciones serverless solo — no hace falta ningún
-   build ni configuración especial.
-4. Todavía no toques "Deploy" — antes vamos a cargar las claves (paso 3).
+| A: Canasto | B: Artículo | C: Cantidad |
+|---|---|---|
+| Canasto 1 | pack de bolsas asurin 45x60 | 1 |
+| Canasto 1 | caja de brownie | 1 |
+| Canasto 2 | yerba | 2 |
+| ... | ... | ... |
 
-## 3. Cargar las claves como variables de entorno
+**Hoja "ListaCompras"**:
 
-Antes de desplegar (o después, editando el proyecto ya creado):
+| A: Artículo | B: Nota |
+|---|---|
+| tajín | |
 
-1. En la pantalla de configuración del proyecto, buscá la sección
-   **"Environment Variables"**.
-2. Agregá una por una:
+Cargá tu inventario actual en este formato una sola vez (a mano, copiando desde
+tu Excel actual) — de ahí en adelante, la tablet se encarga de mantenerlo.
 
-   | Nombre | Valor |
-   |---|---|
-   | `GEMINI_API_KEY` | tu clave real de Gemini |
-   | `CALENDAR_API_KEY` | tu clave real de Google Calendar |
-   | `CALENDAR_ID` | el ID de tu calendario (tu email, o algo `@group.calendar.google.com`) |
-   | `GEMINI_MODEL` | opcional — si no la agregás, usa `gemini-2.5-flash-lite` por defecto |
+## 2. Crear el "service account" de Google (para poder escribir, no solo leer)
 
-3. Guardá y tocá **"Deploy"**.
+El calendario solo necesitaba una API key porque solo lo *leíamos*. Para el
+inventario necesitamos poder **escribir** en la planilla, y eso requiere un
+mecanismo distinto: una cuenta de servicio (un "usuario robot" que solo vos
+controlás).
 
-## 4. Restringir las claves (igual que antes, pero más simple)
+1. Andá a https://console.cloud.google.com/iam-admin/serviceaccounts (podés usar
+   el mismo proyecto de Google Cloud que ya tenías de antes).
+2. Tocá **"Create Service Account"**. Ponele un nombre (ej: "panel-sheets"). No
+   hace falta darle ningún rol especial en este paso, "Continuar" y "Listo" alcanza.
+3. Entrá a la cuenta de servicio recién creada → pestaña **"Keys"** → **"Add Key"**
+   → **"Create new key"** → tipo **JSON**. Se descarga un archivo `.json` — guardalo,
+   ahí adentro están los dos datos que necesitás (`client_email` y `private_key`).
+4. Andá a https://console.cloud.google.com/apis/library/sheets.googleapis.com y
+   activá la **"Google Sheets API"** para ese proyecto.
+5. **Compartí tu planilla** de Google Sheets con el email de la cuenta de servicio
+   (el `client_email` del JSON, algo como
+   `panel-sheets@tu-proyecto.iam.gserviceaccount.com`) — dale permiso de
+   **Editor**, igual que compartirías la planilla con otra persona.
+6. De la URL de tu planilla (`https://docs.google.com/spreadsheets/d/ESTO_ES_EL_ID/edit`),
+   copiá el `ID` — lo vas a necesitar en el paso siguiente.
 
-Una vez desplegado, Vercel te da una URL fija tipo `https://tu-proyecto.vercel.app`.
-Con esta arquitectura, en realidad **ya no es estrictamente necesario** restringir
-las claves por dominio — como viven solo en el servidor y nunca llegan al navegador,
-no hay forma de que alguien las vea "espiando" la página. Aun así, restringirlas por
-las dudas (defensa en profundidad) sigue siendo una buena práctica:
+## 3. Cargar las variables de entorno en Vercel
 
-1. En Google Cloud Console, editá cada key.
-2. En "Restricciones de la aplicación" → "Direcciones IP" no aplica acá (Vercel usa
-   IPs dinámicas). Dejalas sin restricción de sitio esta vez, ya que de todos modos
-   nunca se exponen — la protección real ahora es que están en el servidor, no en
-   el código público.
+Sumá estas, además de las que ya tenías (`CALENDAR_API_KEY`, `CALENDAR_ID`,
+`PANEL_USER`, `PANEL_PASSWORD`):
 
-## 5. Configurar la tablet
+| Nombre | Valor |
+|---|---|
+| `GOOGLE_SERVICE_ACCOUNT_EMAIL` | el `client_email` del JSON descargado |
+| `GOOGLE_PRIVATE_KEY` | el `private_key` del JSON, **tal cual**, con los `\n` incluidos |
+| `SPREADSHEET_ID` | el ID de la planilla, del paso anterior |
 
-En Fully Kiosk Browser (o el navegador que estés usando), la "Start URL" pasa a ser
-directamente tu URL de Vercel: `https://tu-proyecto.vercel.app`
+Sobre `GOOGLE_PRIVATE_KEY`: el JSON tiene algo como
+`"-----BEGIN PRIVATE KEY-----\nMII...\n-----END PRIVATE KEY-----\n"` — pegalo
+completo, con los `\n` literales incluidos (no hace falta convertirlos a saltos
+de línea reales, el código ya se encarga de eso).
+
+Redeployá el proyecto después de cargar las variables.
+
+## 4. Usar la pantalla de inventario en la tablet
+
+En el panel principal, arriba a la derecha, hay un botón con un ícono de canasto
+🧺 — te lleva a la pantalla de inventario. Ahí vas a ver una columna por cada
+canasto que hayas cargado en la planilla, con botones **+/−** para cambiar
+cantidades y una **✕** para quitar un artículo. Al lado, la lista de compras,
+con un botón para **vaciarla completa** (pide confirmación antes de borrar todo).
+
+Los cambios que hagas desde la tablet se reflejan directo en tu Google Sheet, y
+viceversa: si editás la planilla desde el celu o la compu, la tablet lo va a
+mostrar actualizado la próxima vez que entres a esa pantalla.
+
+## Configurar la tablet (clima, calendario)
+
+En Fully Kiosk Browser, la "Start URL" es tu URL de Vercel:
+`https://tu-proyecto.vercel.app`. En los ajustes de la app, cargá el usuario y
+contraseña en el campo de "HTTP Authentication" para que no te lo pida cada vez.
 
 ## Actualizaciones futuras
 
-Cada vez que hagas un cambio y lo subas a GitHub (a la rama principal), Vercel
-vuelve a desplegar solo, automáticamente, en un par de minutos — no hay que repetir
-ningún paso manual.
+Cada vez que subas un cambio a GitHub (rama principal), Vercel redeploya solo,
+automáticamente, en un par de minutos.
+
+

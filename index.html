@@ -17,8 +17,7 @@
     --text-lo:#8a97ad;
     --clima:#f2b441;
     --calendario:#7c9eff;
-    --mic:#4fd8c4;
-    --mic-glow: rgba(79,216,196,0.55);
+    --compras:#7fd88f;
     --danger:#e5697b;
   }
 
@@ -43,11 +42,15 @@
     font-size:15px; letter-spacing:.04em; text-transform:uppercase;
   }
   #topbar #clock{ color:var(--text-hi); font-size:20px; }
+  #btn-inventario{
+    background:var(--panel); border:1px solid var(--panel-line); color:var(--text-hi);
+    font-size:20px; width:38px; height:38px; border-radius:12px; cursor:pointer;
+  }
 
-  #panels{ flex:1; display:flex; position:relative; padding: 6px 34px 0 34px; gap:0; }
-  .panel{ flex:1; display:flex; flex-direction:column; padding: 18px 30px 40px 30px; min-width:0; }
+  #panels{ flex:1; display:flex; position:relative; padding: 6px 34px 24px 34px; gap:0; }
+  .panel{ flex:1; display:flex; flex-direction:column; padding: 18px 30px 0 30px; min-width:0; }
   #panels::after{
-    content:''; position:absolute; left:50%; top:14px; bottom:70px;
+    content:''; position:absolute; left:50%; top:14px; bottom:24px;
     width:1px; background:var(--divider); transform:translateX(-0.5px);
   }
 
@@ -86,35 +89,6 @@
   #cal-vacio, #cal-error{ color:var(--text-lo); font-size:14px; display:none; }
   #cal-error{ color:var(--danger); }
 
-  /* --- botón de voz --- */
-  #mic-wrap{ position:absolute; left:50%; bottom:14px; transform:translate(-50%,50%); display:flex; flex-direction:column; align-items:center; z-index:5; }
-  #mic-btn{
-    width:84px; height:84px; border-radius:50%; border:none; cursor:pointer;
-    background: radial-gradient(circle at 35% 30%, #7ff0de, var(--mic) 60%);
-    box-shadow: 0 0 0 8px rgba(255,255,255,0.03), 0 8px 30px var(--mic-glow);
-    display:flex; align-items:center; justify-content:center;
-    transition: transform .15s ease, box-shadow .3s ease;
-  }
-  #mic-btn:active{ transform:scale(0.94); }
-  #mic-btn svg.mic-glyph{ width:34px; height:34px; fill:#062522; }
-  #mic-hint{ margin-top:10px; font-size:12px; color:var(--text-lo); letter-spacing:.05em; text-transform:uppercase; }
-  #mic-btn.listening{ animation: pulse 1.1s ease-in-out infinite; }
-  #mic-btn.thinking{ animation: spin 1.4s linear infinite; }
-  @keyframes pulse{ 0%,100%{ box-shadow:0 0 0 8px rgba(79,216,196,.12), 0 0 20px var(--mic-glow);} 50%{ box-shadow:0 0 0 18px rgba(79,216,196,.05), 0 0 45px var(--mic-glow);} }
-  @keyframes spin{ from{ filter:hue-rotate(0deg);} to{ filter:hue-rotate(40deg);} }
-
-  #answer{
-    position:absolute; left:50%; bottom:120px; transform:translateX(-50%);
-    width:min(640px, 84vw); max-height:46vh; overflow:auto;
-    background:var(--panel); border:1px solid var(--panel-line); border-radius:20px; padding:22px 26px;
-    box-shadow:0 20px 60px rgba(0,0,0,.5); display:none; z-index:6;
-  }
-  #answer.show{ display:block; }
-  #answer .q{ color:var(--text-lo); font-size:13px; text-transform:uppercase; letter-spacing:.08em; margin-bottom:8px;}
-  #answer .a{ font-size:19px; line-height:1.5; display:flex; gap:14px; align-items:flex-start; }
-  #answer .a .icono{ font-size:30px; flex-shrink:0; }
-  #answer .close{ position:absolute; top:10px; right:14px; color:var(--text-lo); font-size:20px; cursor:pointer; }
-
   /* ---- íconos de clima SVG animados ---- */
   .w-icon{ width:76px; height:76px; overflow:visible; }
   .w-icon.mini{ width:32px; height:32px; }
@@ -149,54 +123,144 @@
   @keyframes niebla{ 0%,100%{ transform:translateX(0); opacity:.4;} 50%{ transform:translateX(6px); opacity:.7;} }
 
   .oculto{ display:none !important; }
+
+  /* ================= PANTALLA DE INVENTARIO ================= */
+  #pantalla-inventario{ width:100vw; height:100vh; display:flex; flex-direction:column; }
+
+  #inv-topbar{
+    display:flex; align-items:center; gap:18px;
+    padding:18px 34px; border-bottom:1px solid var(--panel-line);
+  }
+  .volver-btn{
+    background:var(--panel); border:1px solid var(--panel-line); color:var(--text-hi);
+    font-size:14px; padding:8px 14px; border-radius:10px; cursor:pointer;
+  }
+  .inv-titulo{ font-family:'Space Grotesk',sans-serif; font-size:16px; letter-spacing:.04em; }
+
+  #inv-body{ flex:1; display:flex; overflow:hidden; padding:22px 34px; gap:28px; }
+
+  #inv-canastos{ flex:2.4; display:flex; gap:18px; overflow-x:auto; }
+  .canasto-col{
+    flex:1; min-width:210px; background:var(--panel); border:1px solid var(--panel-line);
+    border-radius:16px; padding:16px; display:flex; flex-direction:column; overflow:hidden;
+  }
+  .canasto-col h4{
+    margin:0 0 12px 0; font-family:'Space Grotesk',sans-serif; font-size:14px;
+    color:var(--clima); text-transform:uppercase; letter-spacing:.06em;
+  }
+  .canasto-lista{ list-style:none; margin:0; padding:0; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:8px; }
+  .canasto-lista li{
+    display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.03);
+    border-radius:10px; padding:8px 10px;
+  }
+  .item-nombre{ flex:1; font-size:14px; line-height:1.25; }
+  .stepper{ display:flex; align-items:center; gap:6px; font-family:'Space Grotesk',sans-serif; font-size:14px; }
+  .stepper button{
+    width:24px; height:24px; border-radius:50%; border:none; background:var(--panel-line);
+    color:var(--text-hi); font-size:15px; cursor:pointer; line-height:1;
+  }
+  .borrar{
+    background:none; border:none; color:var(--text-lo); font-size:14px; cursor:pointer; padding:2px 4px;
+  }
+  .borrar:hover{ color:var(--danger); }
+
+  .agregar-form{ display:flex; gap:6px; margin-top:10px; }
+  .agregar-form input{
+    flex:1; min-width:0; background:rgba(255,255,255,0.05); border:1px solid var(--panel-line);
+    border-radius:8px; color:var(--text-hi); font-size:13px; padding:8px 10px;
+  }
+  .agregar-form button{
+    background:var(--clima); border:none; border-radius:8px; width:34px; color:#241703;
+    font-size:16px; font-weight:700; cursor:pointer;
+  }
+
+  #inv-compras{
+    flex:1; min-width:260px; display:flex; flex-direction:column;
+    background:var(--panel); border:1px solid var(--panel-line); border-radius:16px; padding:18px;
+  }
+  #compras-lista{ list-style:none; margin:0; padding:0; flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:8px; }
+  #compras-lista li{
+    display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.03);
+    border-radius:10px; padding:9px 10px; font-size:14px;
+  }
+  #compras-lista li span{ flex:1; }
+  #compras-lista li button{ background:none; border:none; color:var(--text-lo); font-size:14px; cursor:pointer; }
+  #compras-lista li button:hover{ color:var(--danger); }
+
+  #vaciar-btn{
+    margin-top:14px; background:none; border:1px solid var(--danger); color:var(--danger);
+    border-radius:10px; padding:10px; font-size:13px; cursor:pointer;
+  }
+  #vaciar-confirm{
+    margin-top:10px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    font-size:13px; color:var(--text-lo);
+  }
+  #vaciar-confirm .si{ background:var(--danger); border:none; color:#fff; border-radius:8px; padding:7px 12px; cursor:pointer; font-size:13px; }
+  #vaciar-confirm .no{ background:none; border:1px solid var(--panel-line); color:var(--text-hi); border-radius:8px; padding:7px 12px; cursor:pointer; font-size:13px; }
 </style>
 </head>
 <body>
 <div id="app">
 
-  <div id="topbar">
-    <span id="fecha"></span>
-    <span id="clock"></span>
+  <div id="pantalla-panel">
+    <div id="topbar">
+      <span id="fecha"></span>
+      <button id="btn-inventario" onclick="mostrarPantalla('inventario')" aria-label="Inventario">🧺</button>
+      <span id="clock"></span>
+    </div>
+
+    <div id="panels">
+      <div class="panel" id="clima-col">
+        <p class="panel-label">Clima</p>
+        <div id="clima-hoy">
+          <div id="clima-icono"></div>
+          <div>
+            <div id="clima-temp">--°</div>
+            <div id="clima-desc">Cargando…</div>
+          </div>
+        </div>
+        <div id="clima-detalle">
+          <span id="clima-hum">Humedad --%</span>
+          <span id="clima-viento">Viento -- km/h</span>
+        </div>
+        <div id="clima-minmax"></div>
+        <div id="clima-error">No se pudo cargar el clima.</div>
+        <div id="pronostico"></div>
+      </div>
+
+      <div class="panel" id="cal-col">
+        <p class="panel-label">Calendario</p>
+        <ul id="eventos"></ul>
+        <div id="cal-vacio">No hay eventos próximos.</div>
+        <div id="cal-error">No se pudo cargar el calendario. Revisá CALENDAR_API_KEY / CALENDAR_ID.</div>
+      </div>
+    </div>
   </div>
 
-  <div id="panels">
-    <div class="panel" id="clima-col">
-      <p class="panel-label">Clima</p>
-      <div id="clima-hoy">
-        <div id="clima-icono"></div>
-        <div>
-          <div id="clima-temp">--°</div>
-          <div id="clima-desc">Cargando…</div>
+  <div id="pantalla-inventario" class="oculto">
+    <div id="inv-topbar">
+      <button class="volver-btn" onclick="mostrarPantalla('panel')">← Panel</button>
+      <span class="inv-titulo">Inventario y lista de compras</span>
+    </div>
+
+    <div id="inv-body">
+      <div id="inv-canastos"></div>
+
+      <div id="inv-compras">
+        <p class="panel-label" style="color:var(--compras)">Lista de compras</p>
+        <ul id="compras-lista"></ul>
+        <div class="agregar-form">
+          <input id="compras-input" placeholder="Agregar artículo…" onkeydown="if(event.key==='Enter') agregarCompra()">
+          <button onclick="agregarCompra()">+</button>
+        </div>
+        <button id="vaciar-btn" onclick="confirmarVaciar()">Vaciar lista de compras</button>
+        <div id="vaciar-confirm" class="oculto">
+          <span>¿Vaciar toda la lista?</span>
+          <button class="si" onclick="vaciarListaCompras()">Sí, vaciar</button>
+          <button class="no" onclick="cancelarVaciar()">Cancelar</button>
         </div>
       </div>
-      <div id="clima-detalle">
-        <span id="clima-hum">Humedad --%</span>
-        <span id="clima-viento">Viento -- km/h</span>
-      </div>
-      <div id="clima-minmax"></div>
-      <div id="clima-error">No se pudo cargar el clima.</div>
-      <div id="pronostico"></div>
     </div>
-
-    <div class="panel" id="cal-col">
-      <p class="panel-label">Calendario</p>
-      <ul id="eventos"></ul>
-      <div id="cal-vacio">No hay eventos próximos.</div>
-      <div id="cal-error">No se pudo cargar el calendario. Revisá CALENDAR_API_KEY / CALENDAR_ID.</div>
-    </div>
-  </div>
-
-  <div id="answer">
-    <span class="close" onclick="cerrarRespuesta()">✕</span>
-    <div class="q" id="answer-q"></div>
-    <div class="a"><span class="icono" id="answer-icon">✨</span><span id="answer-text"></span></div>
-  </div>
-
-  <div id="mic-wrap">
-    <button id="mic-btn" onclick="activarConsulta()">
-      <svg class="mic-glyph" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg>
-    </button>
-    <div id="mic-hint">Tocá para preguntar</div>
   </div>
 
 </div>
@@ -206,10 +270,8 @@ const CONFIG = {
   LAT: -34.6037,
   LON: -58.3816,
   CIUDAD: "Buenos Aires",
-  VOZ_LANG: "es-AR",
   REFRESCO_MS: 15 * 60 * 1000
-  // Ya no hay claves acá: GEMINI_API_KEY, CALENDAR_API_KEY y CALENDAR_ID
-  // ahora viven como variables de entorno en Vercel (ver README).
+  // CALENDAR_API_KEY y CALENDAR_ID viven como variables de entorno en Vercel (ver README).
 };
 
 /* ============== RELOJ ============== */
@@ -257,10 +319,6 @@ function iconoSVG(code, isDay, extraClass=''){
   return `<svg viewBox="0 0 100 100" class="w-icon ${extraClass}">${inner}</svg>`;
 }
 
-// emoji simple, solo como ícono de acompañamiento en la tarjeta de respuesta por voz
-const WMO_EMOJI = {0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌦️',61:'🌧️',63:'🌧️',65:'🌧️',71:'🌨️',73:'🌨️',75:'🌨️',80:'🌦️',81:'🌧️',82:'⛈️',95:'⛈️',96:'⛈️',99:'⛈️'};
-let ultimoCodigoClima = 0;
-
 /* ============== FONDO DINÁMICO SEGÚN CLIMA/HORA ============== */
 const TEMAS = {
   despejado_dia: ['#123a63','#2f6fa8'],
@@ -301,7 +359,6 @@ async function cargarClima(){
 
     const code = d.current.weather_code;
     const isDay = d.current.is_day === 1;
-    ultimoCodigoClima = code;
 
     document.getElementById('clima-icono').innerHTML = iconoSVG(code, isDay);
     document.getElementById('clima-temp').textContent = Math.round(d.current.temperature_2m) + '°';
@@ -378,212 +435,148 @@ cargarClima(); cargarCalendario();
 setInterval(cargarClima, CONFIG.REFRESCO_MS);
 setInterval(cargarCalendario, CONFIG.REFRESCO_MS);
 
-/* ============== BOTÓN DE VOZ → GRABAR AUDIO → GEMINI ==============
-   No usamos SpeechRecognition porque depende de un servicio en la nube
-   de Google atado a Play Services (no disponible en este LineageOS sin GApps).
-   En cambio: grabamos el audio con MediaRecorder (estándar del navegador,
-   no depende de Google) y se lo mandamos directo a Gemini, que transcribe
-   y responde en un solo paso. */
-const micBtn = document.getElementById('mic-btn');
-const micHint = document.getElementById('mic-hint');
-const answerBox = document.getElementById('answer');
-
-let mediaRecorder = null;
-let audioChunks = [];
-let grabando = false;
-
-function cerrarRespuesta(){ answerBox.classList.remove('show'); }
-
-async function activarConsulta(){
-  if(micBtn.classList.contains('thinking')) return;
-
-  if(!grabando){
-    // --- Empezar a grabar ---
-    if(!navigator.mediaDevices || !window.MediaRecorder){
-      mostrarRespuesta('', 'Este navegador no puede grabar audio (falta MediaRecorder).', '⚠️');
-      return;
-    }
-    try{
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorder = new MediaRecorder(stream);
-      audioChunks = [];
-      mediaRecorder.ondataavailable = (e) => { if(e.data.size > 0) audioChunks.push(e.data); };
-      mediaRecorder.onstop = async () => {
-        stream.getTracks().forEach(t => t.stop()); // apaga el micrófono
-        const blobOriginal = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
-        try{
-          // Gemini no acepta audio/webm (lo que graba Chrome por defecto).
-          // Lo convertimos a WAV en el propio navegador antes de mandarlo.
-          const wavBlob = await convertirAWav(blobOriginal);
-          enviarAudioAGemini(wavBlob);
-        }catch(e){
-          console.error('Error convirtiendo el audio:', e);
-          mostrarRespuesta('', 'No se pudo procesar el audio grabado.', '⚠️');
-          micBtn.classList.remove('thinking');
-          micHint.textContent = 'Tocá para preguntar';
-        }
-      };
-      mediaRecorder.start();
-      grabando = true;
-      micBtn.classList.add('listening');
-      micHint.textContent = 'Grabando… tocá de nuevo para enviar';
-      cerrarRespuesta();
-    }catch(e){
-      console.error(e);
-      mostrarRespuesta('', 'No se pudo acceder al micrófono. Revisá los permisos de la app.', '⚠️');
-    }
-  } else {
-    // --- Parar de grabar y enviar ---
-    grabando = false;
-    micBtn.classList.remove('listening');
-    micBtn.classList.add('thinking');
-    micHint.textContent = 'Pensando…';
-    mediaRecorder.stop();
+/* ============================================================
+   PANTALLA DE INVENTARIO Y LISTA DE COMPRAS
+   ============================================================ */
+function mostrarPantalla(nombre){
+  document.getElementById('pantalla-panel').classList.toggle('oculto', nombre !== 'panel');
+  document.getElementById('pantalla-inventario').classList.toggle('oculto', nombre !== 'inventario');
+  if(nombre === 'inventario'){
+    cargarInventario();
+    cargarListaCompras();
   }
 }
 
-function blobABase64(blob){
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result.split(',')[1]); // saca el prefijo data:...;base64,
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
+/* --- Inventario --- */
+async function cargarInventario(){
+  try{
+    const r = await fetch('/api/inventario');
+    const d = await r.json();
+    window._inventario = d.items || [];
+    renderInventario();
+  }catch(e){ console.error(e); }
+}
+
+function renderInventario(){
+  const cont = document.getElementById('inv-canastos');
+  cont.innerHTML = '';
+  const porCanasto = {};
+  (window._inventario || []).forEach(item => {
+    if(!porCanasto[item.canasto]) porCanasto[item.canasto] = [];
+    porCanasto[item.canasto].push(item);
+  });
+
+  Object.keys(porCanasto).sort().forEach(canasto => {
+    const col = document.createElement('div');
+    col.className = 'canasto-col';
+    col.innerHTML = `<h4>${canasto}</h4><ul class="canasto-lista"></ul>
+      <div class="agregar-form">
+        <input placeholder="Agregar…" class="canasto-input">
+        <button class="canasto-add">+</button>
+      </div>`;
+
+    const ul = col.querySelector('.canasto-lista');
+    porCanasto[canasto].forEach(item => {
+      const li = document.createElement('li');
+      li.innerHTML = `<span class="item-nombre">${item.articulo}</span>
+        <span class="stepper">
+          <button onclick="cambiarCantidad(${item.fila}, -1)">−</button>
+          <span>${item.cantidad}</span>
+          <button onclick="cambiarCantidad(${item.fila}, 1)">+</button>
+        </span>
+        <button class="borrar" onclick="borrarItemInventario(${item.fila})">✕</button>`;
+      ul.appendChild(li);
+    });
+
+    const input = col.querySelector('.canasto-input');
+    const agregar = () => {
+      const val = input.value.trim();
+      if(val){ agregarItemInventario(canasto, val); input.value = ''; }
+    };
+    col.querySelector('.canasto-add').onclick = agregar;
+    input.onkeydown = (e) => { if(e.key === 'Enter') agregar(); };
+
+    cont.appendChild(col);
   });
 }
 
-/* --- Conversión de audio grabado (webm) a WAV, que sí acepta Gemini --- */
-async function convertirAWav(blob){
-  const arrayBuffer = await blob.arrayBuffer();
-  const AudioCtx = window.AudioContext || window.webkitAudioContext;
-  const audioCtx = new AudioCtx();
-  const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-  const wavBlob = audioBufferAWav(audioBuffer);
-  audioCtx.close();
-  return wavBlob;
+async function cambiarCantidad(fila, delta){
+  const item = (window._inventario || []).find(i => i.fila === fila);
+  if(!item) return;
+  const nuevaCantidad = Math.max(0, item.cantidad + delta);
+  await fetch('/api/inventario', {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fila, canasto: item.canasto, articulo: item.articulo, cantidad: nuevaCantidad })
+  });
+  cargarInventario();
 }
 
-function audioBufferAWav(buffer){
-  const numChannels = buffer.numberOfChannels;
-  const sampleRate = buffer.sampleRate;
-  const bitDepth = 16;
-
-  const canal0 = buffer.getChannelData(0);
-  const interleaved = numChannels === 2 ? intercalarCanales(canal0, buffer.getChannelData(1)) : canal0;
-
-  const dataLength = interleaved.length * (bitDepth / 8);
-  const arrBuf = new ArrayBuffer(44 + dataLength);
-  const view = new DataView(arrBuf);
-
-  escribirTexto(view, 0, 'RIFF');
-  view.setUint32(4, 36 + dataLength, true);
-  escribirTexto(view, 8, 'WAVE');
-  escribirTexto(view, 12, 'fmt ');
-  view.setUint32(16, 16, true);
-  view.setUint16(20, 1, true); // PCM
-  view.setUint16(22, numChannels, true);
-  view.setUint32(24, sampleRate, true);
-  view.setUint32(28, sampleRate * numChannels * (bitDepth / 8), true);
-  view.setUint16(32, numChannels * (bitDepth / 8), true);
-  view.setUint16(34, bitDepth, true);
-  escribirTexto(view, 36, 'data');
-  view.setUint32(40, dataLength, true);
-
-  let offset = 44;
-  for (let i = 0; i < interleaved.length; i++, offset += 2){
-    const s = Math.max(-1, Math.min(1, interleaved[i]));
-    view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
-  }
-
-  return new Blob([view], { type: 'audio/wav' });
+async function borrarItemInventario(fila){
+  await fetch('/api/inventario', {
+    method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fila })
+  });
+  cargarInventario();
 }
 
-function intercalarCanales(izq, der){
-  const resultado = new Float32Array(izq.length + der.length);
-  let i = 0, j = 0;
-  while (i < resultado.length){
-    resultado[i++] = izq[j];
-    resultado[i++] = der[j];
-    j++;
-  }
-  return resultado;
+async function agregarItemInventario(canasto, articulo){
+  await fetch('/api/inventario', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ canasto, articulo, cantidad: 1 })
+  });
+  cargarInventario();
 }
 
-function escribirTexto(view, offset, texto){
-  for (let i = 0; i < texto.length; i++) view.setUint8(offset + i, texto.charCodeAt(i));
-}
-
-async function enviarAudioAGemini(blob){
+/* --- Lista de compras --- */
+async function cargarListaCompras(){
   try{
-    const base64Audio = await blobABase64(blob);
-
-    const r = await fetch('/api/gemini', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mime_type: blob.type || 'audio/webm', data: base64Audio })
-    });
-    if(!r.ok) throw new Error('http ' + r.status);
+    const r = await fetch('/api/lista-compras');
     const d = await r.json();
-    if(d.error) throw new Error(d.error);
-
-    const pregunta = d.pregunta || '';
-    const texto = d.respuesta || 'No recibí respuesta.';
-
-    mostrarRespuesta(pregunta, texto, iconoParaPregunta(pregunta || texto));
-    hablar(texto);
-  }catch(e){
-    console.error(e);
-    mostrarRespuesta('', 'Hubo un error consultando a la IA. Revisá la conexión.', '⚠️');
-  }finally{
-    micBtn.classList.remove('thinking');
-    micHint.textContent = 'Tocá para preguntar';
-  }
+    window._compras = d.items || [];
+    renderListaCompras();
+  }catch(e){ console.error(e); }
 }
 
-function iconoParaPregunta(p){
-  const t = p.toLowerCase();
-  if(/clima|temperatura|lluv|frío|calor|viento/.test(t)) return WMO_EMOJI[ultimoCodigoClima] || '🌡️';
-  if(/calendario|reunión|evento|agenda|turno/.test(t)) return '🗓️';
-  if(/hora|tiempo(?!\s+de\s+lluvia)/.test(t)) return '🕐';
-  return '✨';
+function renderListaCompras(){
+  const ul = document.getElementById('compras-lista');
+  ul.innerHTML = '';
+  (window._compras || []).forEach(item => {
+    const li = document.createElement('li');
+    li.innerHTML = `<span>${item.articulo}</span><button onclick="borrarCompra(${item.fila})">✕</button>`;
+    ul.appendChild(li);
+  });
 }
 
-function mostrarRespuesta(pregunta, texto, icono){
-  document.getElementById('answer-q').textContent = pregunta ? '"' + pregunta + '"' : '';
-  document.getElementById('answer-icon').textContent = icono || '✨';
-  document.getElementById('answer-text').textContent = texto;
-  answerBox.classList.add('show');
-  clearTimeout(window._answerTimeout);
-  window._answerTimeout = setTimeout(cerrarRespuesta, 30000);
+async function agregarCompra(){
+  const input = document.getElementById('compras-input');
+  const val = input.value.trim();
+  if(!val) return;
+  await fetch('/api/lista-compras', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ articulo: val })
+  });
+  input.value = '';
+  cargarListaCompras();
 }
 
-function hablar(texto){
-  if(!('speechSynthesis' in window)) return;
-  window.speechSynthesis.cancel();
+async function borrarCompra(fila){
+  await fetch('/api/lista-compras', {
+    method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fila })
+  });
+  cargarListaCompras();
+}
 
-  const decirConVoces = () => {
-    const voces = window.speechSynthesis.getVoices();
-    // Buscamos cualquier voz en español instalada (RHVoice puede haberla
-    // registrado como "es-ES", "es-419", "es", etc. — no forzamos "es-AR" exacto).
-    const vozEs = voces.find(v => v.lang && v.lang.toLowerCase().startsWith('es'));
+function confirmarVaciar(){ document.getElementById('vaciar-confirm').classList.remove('oculto'); }
+function cancelarVaciar(){ document.getElementById('vaciar-confirm').classList.add('oculto'); }
 
-    const u = new SpeechSynthesisUtterance(texto);
-    if(vozEs){
-      u.voice = vozEs;
-      u.lang = vozEs.lang;
-    } else {
-      u.lang = CONFIG.VOZ_LANG; // último recurso, puede no sonar si no hay voz instalada
-    }
-    window.speechSynthesis.speak(u);
-  };
-
-  // En algunos navegadores la lista de voces carga de forma asíncrona
-  // y getVoices() devuelve vacío la primera vez.
-  const vocesActuales = window.speechSynthesis.getVoices();
-  if(vocesActuales.length === 0){
-    window.speechSynthesis.onvoiceschanged = decirConVoces;
-  } else {
-    decirConVoces();
-  }
+async function vaciarListaCompras(){
+  await fetch('/api/lista-compras', {
+    method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ todos: true })
+  });
+  cancelarVaciar();
+  cargarListaCompras();
 }
 </script>
 </body>
